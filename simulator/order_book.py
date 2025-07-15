@@ -5,3 +5,34 @@
 #  -- Remove or update orders (e.g. cancellations)
 #  -- Return best bid/ask
 #  -- Possibly support price-time priority or FIFO 
+import heapq
+
+class OrderBook:
+  def __init__(self):
+    # List of bids (orders looking to buy) -- sorted by price-time priority
+    self.bids = []
+
+    # List of bids (orders looking to sell) -- sorted by price-time priority 
+    self.asks = []
+
+    # List stop orders waiting to be activated
+    self.stops = []
+  
+  def insert(self, order):
+    # Inserts a new limit order to the book
+    if order.direction == "buy":
+      heapq.heappush(self.bids, (-order.limit_price, order.timestamp, order.order_id, order))
+    else:
+      heapq.heappush(self.asks, (order.limit_price, order.timestamp, order.order_id, order))
+  
+  def cancel(self, order):
+    # Removes specified order from the book
+    return order
+  
+  def get_best_ask(self):
+    # Returns order with lowest selling price
+    return
+  
+  def get_best_bid(self):
+    # Returns order with highest buying price 
+    return 
