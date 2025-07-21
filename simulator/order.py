@@ -8,44 +8,29 @@
 # -- Timestamp 
 
 class Order:
-  def __init__(self, order_id, direction, quant, type, time=None, stop=False, limit_price=None, stop_price=None):
+  def __init__(self, order_id, direction, quantity, timestamp=None):
+    
+    self.order_id = order_id    # Unique Order ID 
+    self.direction = direction  # Either "buy" or "sell"
+    self.quantity = quantity    # Quantity of order 
+    self.timestamp = timestamp  # Time at which the order is placed
 
-    #Unique Order ID
-    self.order_id = order_id
+class MarketOrder(Order):
+  def __init__(self, order_id, direction, quantity, timestamp=None):
+    super().__init__(order_id, direction, quantity, timestamp)
 
-    #Either buy or sell
-    self.direction = direction
-
-    #Quantity of order
-    self.quantity = quant
-
-    #Desired price if limit order or stop-limit order 
+class LimitOrder(Order):
+  def __init__(self, order_id, direction, quantity, limit_price, timestamp=None):
+    super().__init__(order_id, direction, quantity, timestamp)
     self.limit_price = limit_price
 
-    #If the order is a stop order, the trigger price when the order is activated 
+class StopOrder(Order):
+  def __init__(self, order_id, direction, quantity, stop_price, timestamp=None):
+    super().__init__(order_id, direction, quantity, timestamp)
     self.stop_price = stop_price
+    self.activated = False
 
-    #Type of order: "market" or "limit"
-    self.order_type = type
-
-    #either True or False if the order is a stop order 
-    self.stop = stop
-
-    #Time at which the order is placed 
-    self.timestamp = time
-  
-  def is_match(self, order2):
-    # returns True if the current order is a match with order2, else False
-    # self.direction must be opposite of order2.direction
-    # -- if either order is type market --> match 
-    # -- else:
-    # ---- if the buy - sell price >= 0 --> match   
-    if self.direction == order2.direction: 
-      return False
-    else:
-      if self.order_type == "market" or order2.order_type == "market":
-        return True
-      elif self.direction == "buy":
-        return self.limit_price >= order2.limit_price
-      else:
-        return self.limit_price <= order2.limit_price
+class CancelOrder(Order):
+  def __init__(self, order_id, cancel_id, timestamp=None):
+    super().__init__(order_id, direction=None, quantity=0, timestamp=timestamp)
+    self.cancel_id = cancel_id

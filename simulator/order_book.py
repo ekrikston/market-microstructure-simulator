@@ -1,6 +1,6 @@
 # Manage the live list of orders. 
 # The core structure holding all active orders waiting to be matched:
-#  -- Maintain two sortted sides -- buy (bids) and sell (asks)
+#  -- Maintain two sorted sides -- buy (bids) and sell (asks)
 #  -- Insert new limit orders
 #  -- Remove or update orders (e.g. cancellations)
 #  -- Return best bid/ask
@@ -31,8 +31,10 @@ class OrderBook:
   
   def get_best_ask(self):
     # Returns order with lowest selling price
-    return
+    best_ask = heapq.heappop(self.asks)
+    return best_ask[3]
   
   def get_best_bid(self):
     # Returns order with highest buying price 
-    return 
+    best_bid = heapq.heappop(self.bids)
+    return best_bid[3]

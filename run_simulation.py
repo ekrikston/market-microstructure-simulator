@@ -3,18 +3,24 @@
 # Output results to console or files
 # Possibly: include CLI flags for parameters
 
-from simulator.order import Order
-#from simulator.order_book import OrderBook
+from simulator.order import Order, MarketOrder, LimitOrder, StopOrder, CancelOrder
+from simulator.order_book import OrderBook
+from simulator.exchange import Exchange
+from simulator.trader import Trader, RandomTrader
+
+N = 100
 
 def main():
-
-  order1 = Order(1, "buy", 100, "limit", limit_price=55) 
-  order2 = Order(2, "sell", 100, "limit", limit_price = 50)
-  #bids = [order1]
-  #asks = [order2]
-  match = order1.is_match(order2)
-  print(match)
-  #book = OrderBook(bids, asks, [])
+  book = OrderBook()
+  exchange = Exchange(book)
+  traders = [RandomTrader(i) for i in range(10)]
+  for i in range(N):
+    for trader in traders:
+      order = trader.generate_order()
+      if order: 
+        exchange.submit_order(order)
+      exchange.print_order_book()
+      exchange.print_trades()
 
 
 if __name__ == "__main__":
