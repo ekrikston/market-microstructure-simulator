@@ -1,10 +1,5 @@
 # Manage the live list of orders. 
-# The core structure holding all active orders waiting to be matched:
-#  -- Maintain two sorted sides -- buy (bids) and sell (asks)
-#  -- Insert new limit orders
-#  -- Remove or update orders (e.g. cancellations)
-#  -- Return best bid/ask
-#  -- Possibly support price-time priority or FIFO 
+
 import heapq
 
 class OrderBook:
@@ -17,7 +12,6 @@ class OrderBook:
   
   def insert(self, order):
     # Inserts a new limit order to the book
-    print("Inserting Order")
     if order.direction == "buy":
       heapq.heappush(self.bids, (-order.price, order.timestamp, order.order_id, order))
     else:

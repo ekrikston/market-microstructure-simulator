@@ -1,11 +1,12 @@
 # Central coordinator of simulation:
-# -- Instatiate order book and matching engine
-# -- Accept orders from traders
-# -- Send orders through the engine
-# -- Collect trade history, market stats, etc
-# -- Run the simulation loop (1 tick / sec)
-# -- Possibly also handle market time, events, randomness
-from simulator.order import Order, MarketOrder, LimitOrder, StopOrder, CancelOrder
+# -- Instatiate order book, list of stop orders, and matching engine
+# -- Accept orders submitted by traders
+# -- Implement matching logic 
+# -- Collect trade history, market stats, etc??
+# -- Run the simulation loop (1 tick / sec)??
+# -- Possibly also handle market time, events, randomness??
+
+from simulator.order import Order
 from simulator.order_book import OrderBook
 from simulator.trader import Trader, Trade
 import csv
@@ -32,14 +33,14 @@ class Exchange:
     return
 
   def log_trade(self, trade):
-    # add trade to trade book
-    # udpate last trade price 
+    # Add trade as a row in the trade log
     with open(self.trade_log_path, "a", newline="") as f:
       writer = csv.writer(f)
       writer.writerow(trade.to_csv_row())
   
   def make_trade(self, incoming_order, resting_order, incoming_direction):
-    # Make a trade, log the trade, and return amount traded 
+    # Make a trade, log the trade, and return new quantities of each order
+
     resting_price = resting_order.price
     match_quantity = min(incoming_order.quantity, resting_order.quantity)   
     trade = Trade(
@@ -62,12 +63,10 @@ class Exchange:
     pop_direction = "sell" if incoming_direction == "buy" else "buy"
     resting_order = self.order_book.safe_peek(pop_direction)
     if resting_order is None:
-      print("Resting Order = None. About to Insert Order")
       self.order_book.insert(incoming_order)
       return
 
-    while resting_order:
-      
+    while resting_order and incoming_order.is_match(resting_order): 
       #Pop resting order from heap
       self.order_book.safe_pop(pop_direction)
 
@@ -108,19 +107,19 @@ class Exchange:
   def submit_order(self, order):
     order.timestamp = self.time
     self.time += 1
-    if isinstance(order, MarketOrder):
+    incoming_order_type = order.order_type
+    if incoming_order_type == "Market":
       self.match_market_order(order)
-    elif isinstance(order, LimitOrder):
-      print("Matching limit")
+    elif incoming_order_type == "Limit":
       self.match_limit_order(order)
-    elif isinstance(order, StopOrder):
+    elif incoming_order_type == "Stop":
       self.stops.insert(order)
-    elif isinstance(order, CancelOrder):
+    elif incoming_order_type == "Cancel":
       self.order_book.cancel(order.direction, order.cancel_id)
     else:
       print("Invalid order type")
 
-    self.check_stops()
+    #self.check_stops()
   
   def print_order_book(self, n=5):
     print("\n--- Order Book --- ")

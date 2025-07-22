@@ -3,7 +3,7 @@
 # Output results to console or files
 # Possibly: include CLI flags for parameters
 
-from simulator.order import Order, MarketOrder, LimitOrder, StopOrder, CancelOrder
+from simulator.order import Order
 from simulator.order_book import OrderBook
 from simulator.exchange import Exchange
 from simulator.trader import Trader, RandomTrader
@@ -12,11 +12,12 @@ N = 100
 
 def main():
   exchange = Exchange()
-  order1 = LimitOrder(1, "A", "sell", 25, 75)
-  order2 = LimitOrder(2, "B", "sell", 50, 60)
-  order3 = LimitOrder(3, "A", "sell", 25, 70)
-  order4 = MarketOrder(4, "C", "buy", 100)
-  orders = [order1, order2, order3, order4]
+  order1 = Order(1, "A", "sell", 25, "Limit", price = 75)
+  order2 = Order(2, "B", "buy", 50, "Limit", price = 80)
+  order3 = Order(3, "C", "sell", 25, "Limit", price = 85)
+  order4 = Order(4, "D", "sell", 25, "Limit", price = 85)
+  order5 = Order(5, "A", "buy", 25, "Limit", price = 90)
+  orders = [order1, order2, order3, order4, order5]
 
   for ord in orders:
     exchange.submit_order(ord)
