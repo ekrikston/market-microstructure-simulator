@@ -5,55 +5,156 @@
 # -- Collect trade history, market stats, etc
 # -- Run the simulation loop (1 tick / sec)
 # -- Possibly also handle market time, events, randomness
-from order import Order, MarketOrder, LimitOrder, StopOrder, CancelOrder
+from simulator.order import Order, MarketOrder, LimitOrder, StopOrder, CancelOrder
+from simulator.order_book import OrderBook
+from simulator.trader import Trader, Trade
+import csv
 
 class Exchange:
-  def __init__(self, order_book):
-    self.order_book = order_book
+  def __init__(self):
+    self.order_book = OrderBook()
     self.last_trade_price = None
-    self.trade_log = []
-    self.stops = []
+    self.stops = OrderBook()
     self.time = 0
+    self.total_trades = 0
+    self.trade_log_path = "trade_log.csv"
+    with open(self.trade_log_path, "w", newline="") as f:
+      writer = csv.writer(f)
+      writer.writerow([
+        "Timestamp", "Trade ID", "Trade Price", "Trade Quantity", 
+        "Buy Order ID", "Sell Order ID", "Buyer ID", "Seller ID", 
+        "Buy Order Type", "Sell Order Type", "Aggressor"
+      ])
   
   def check_stops(self):
     # check if any stop orders are activated
     # submit any newly activated orders 
     return
 
-  def log_trade(self):
+  def log_trade(self, trade):
     # add trade to trade book
     # udpate last trade price 
-    return
-
-  def match_limit_order(self, order):
-    # check for match in order book
-    # if no match, add order to order_book 
-    # if match, log the trade
-    return
-
-  def match_market_order(self, order):
-    # logs trade and updates last trade price 
-    # rejects or partially filles the market order if no liquidity available
-    return 
+    with open(self.trade_log_path, "a", newline="") as f:
+      writer = csv.writer(f)
+      writer.writerow(trade.to_csv_row())
   
+  def make_trade(self, incoming_order, resting_order, incoming_direction):
+    # Make a trade, log the trade, and return amount traded 
+    resting_price = resting_order.price
+    match_quantity = min(incoming_order.quantity, resting_order.quantity)   
+    trade = Trade(
+      timestamp = self.time,
+      trade_id = self.total_trades,
+      buy_order = incoming_order if incoming_direction == "buy" else resting_order,
+      sell_order = incoming_order if incoming_direction == "sell" else resting_order,
+      trade_price = resting_price,
+      trade_quantity = match_quantity
+    )
+    self.log_trade(trade)
+    self.total_trades += 1
+    self.last_trade_price = resting_price
+    return incoming_order.quantity - match_quantity, resting_order.quantity - match_quantity
+
+  def match_limit_order(self, incoming_order):
+    # Matching incoming limit orders or adding to order book
+
+    incoming_direction = incoming_order.direction
+    pop_direction = "sell" if incoming_direction == "buy" else "buy"
+    resting_order = self.order_book.safe_peek(pop_direction)
+    if resting_order is None:
+      print("Resting Order = None. About to Insert Order")
+      self.order_book.insert(incoming_order)
+      return
+
+    while resting_order:
+      
+      #Pop resting order from heap
+      self.order_book.safe_pop(pop_direction)
+
+      # Make the trade, get total amount traded, and update orders
+      incoming_order.quantity, resting_order.quantity = self.make_trade(incoming_order, resting_order, incoming_direction)
+
+      # Put resting order back in the book if remainder
+      if resting_order.quantity > 0:
+        self.order_book.insert(resting_order)
+
+      # If all of incoming order has been traded, return from function
+      if incoming_order.quantity == 0:
+        return
+
+      # Get new resting order 
+      resting_order = self.order_book.safe_peek(pop_direction)
+
+    # If resting and incoming order not a match, add remainder of incoming order to book
+    self.order_book.insert(incoming_order)
+
+  def match_market_order(self, incoming_order):
+    # Matching incoming market orders 
+    incoming_direction = incoming_order.direction
+    pop_direction = "sell" if incoming_direction == "buy" else "buy"
+
+    while incoming_order.quantity > 0:
+
+      resting_order = self.order_book.safe_pop(pop_direction)
+      if resting_order is None:
+        print("No liquidity remaining")
+        return
+      
+      incoming_order.quantity, resting_order.quantity = self.make_trade(incoming_order, resting_order, incoming_direction)
+
+      if resting_order.quantity > 0:
+        self.order_book.insert(resting_order)
+
   def submit_order(self, order):
     order.timestamp = self.time
     self.time += 1
     if isinstance(order, MarketOrder):
       self.match_market_order(order)
     elif isinstance(order, LimitOrder):
-      self.match_limit_order
+      print("Matching limit")
+      self.match_limit_order(order)
     elif isinstance(order, StopOrder):
-      self.stops.append(order)
+      self.stops.insert(order)
     elif isinstance(order, CancelOrder):
-      self.order_book.cancel(order)
+      self.order_book.cancel(order.direction, order.cancel_id)
     else:
-      print("Invalid order")
+      print("Invalid order type")
 
     self.check_stops()
   
-  def print_order_book(self):
-    print("Order Book: ")
+  def print_order_book(self, n=5):
+    print("\n--- Order Book --- ")
+    print("\nBIDS (Buy Orders): ")
+    print("Price\tQty\tTrader\tType\tTime")
 
-  def print_trades(self):
-    print("Trade Log: ")
+    top_bids = sorted(self.order_book.bids)[:n]
+    for _, _, _, order in top_bids:
+      print(f"{order.price:.2f}\t{order.quantity}\t{order.trader_id}\t{order.order_type}\t{order.timestamp}")
+
+    print("\nASKS (Sell Orders): ")
+    print("Price\tQty\tTrader\tType\tTime")
+
+    top_asks = sorted(self.order_book.asks)[:n]
+    for _, _, _, order in top_asks:
+      print(f"{order.price:.2f}\t{order.quantity}\t{order.trader_id}\t{order.order_type}\t{order.timestamp}")
+
+
+  def print_trades(self, n=5):
+    print(f"\n--- Preview First {n} Trades ---")
+    
+    with open(self.trade_log_path, mode="r") as f:
+      reader = csv.reader(f)
+      header = next(reader)
+      print("\t".join(header))
+      for i, row in enumerate(reader):
+        print("\t".join(row))
+        if i + 1 >= n:
+          break
+  
+  def save_trades(self, filename=None):
+    if filename==None:
+      timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+      filename = f"trade_log_{timestamp}.csv"
+    
+    shutil.copy(self.trade_log_path, filename)
+    print(f"Trade log saved as {filename}")

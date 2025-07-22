@@ -14,27 +14,38 @@ class OrderBook:
 
     # List of bids (orders looking to sell) -- sorted by price-time priority 
     self.asks = []
-
-    # List stop orders waiting to be activated
-    self.stops = []
   
   def insert(self, order):
     # Inserts a new limit order to the book
+    print("Inserting Order")
     if order.direction == "buy":
-      heapq.heappush(self.bids, (-order.limit_price, order.timestamp, order.order_id, order))
+      heapq.heappush(self.bids, (-order.price, order.timestamp, order.order_id, order))
     else:
-      heapq.heappush(self.asks, (order.limit_price, order.timestamp, order.order_id, order))
+      heapq.heappush(self.asks, (order.price, order.timestamp, order.order_id, order))
   
-  def cancel(self, order):
+  def cancel(self, direction, cancel_id):
     # Removes specified order from the book
-    return order
+    heap = self.bids if direction == "buy" else self.asks
+    for _, _, order_id, order in heap:
+      if order_id == cancel_id:
+        order.active = False
   
-  def get_best_ask(self):
-    # Returns order with lowest selling price
-    best_ask = heapq.heappop(self.asks)
-    return best_ask[3]
-  
-  def get_best_bid(self):
-    # Returns order with highest buying price 
-    best_bid = heapq.heappop(self.bids)
-    return best_bid[3]
+  def safe_pop(self, direction):
+    # Returns best active offer and removes from heap
+    heap = self.asks if direction == "sell" else self.bids
+    while heap:
+      best = heapq.heappop(heap)[3]
+      if best.active:
+        return best
+    return None
+
+  def safe_peek(self, direction):
+    # Returns best active offer without altering heap
+    heap = self.asks if direction == "sell" else self.bids
+    while heap:
+      best = heap[0][3]
+      if best.active:
+        return best
+      else:
+        heapq.heappop(heap)[3]
+    return None

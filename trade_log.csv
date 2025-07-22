@@ -1,0 +1,4 @@
+Timestamp,Trade ID,Trade Price,Trade Quantity,Buy Order ID,Sell Order ID,Buyer ID,Seller ID,Buy Order Type,Sell Order Type,Aggressor
+4,0,60,50,4,2,C,B,Market,Limit,Buy
+4,1,70,25,4,3,C,A,Market,Limit,Buy
+4,2,75,25,4,1,C,A,Market,Limit,Buy
