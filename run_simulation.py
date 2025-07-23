@@ -8,16 +8,17 @@ from simulator.order_book import OrderBook
 from simulator.exchange import Exchange
 from simulator.trader import Trader, RandomTrader
 
-N = 100
+#N = 100
 
 def main():
   exchange = Exchange()
-  order1 = Order(1, "A", "sell", 25, "Limit", price = 75)
-  order2 = Order(2, "B", "buy", 50, "Limit", price = 80)
-  order3 = Order(3, "C", "sell", 25, "Limit", price = 85)
-  order4 = Order(4, "D", "sell", 25, "Limit", price = 85)
-  order5 = Order(5, "A", "buy", 25, "Limit", price = 90)
-  orders = [order1, order2, order3, order4, order5]
+  order1 = Order(1, "A", "sell", "Limit", quantity = 25, price = 75)
+  order2 = Order(2, "B", "buy", "Limit", quantity = 50, price = 80)
+  order3 = Order(3, "C", "sell", "Limit", quantity = 25, price = 85)
+  order4 = Order(4, "E", "buy", "Stop", quantity=25, price = 80)
+  order5 = Order(5, "D", "sell", "Limit", quantity = 25, price = 85)
+  order6 = Order(6, "A", "buy", "Limit", quantity = 25, price = 90)
+  orders = [order1, order2, order3, order4, order5, order6]
 
   for ord in orders:
     exchange.submit_order(ord)

@@ -1,7 +1,7 @@
 # Define what an Order is
 
 class Order:
-  def __init__(self, order_id, trader_id, direction, quantity, order_type, price = None, timestamp=None, cancel_id = None):
+  def __init__(self, order_id, trader_id, direction, order_type, quantity=None, price = None, timestamp=None, cancel_id = None):
     
     self.order_id = order_id      # Unique Order ID 
     self.trader_id = trader_id    # ID of trader who submitted the order

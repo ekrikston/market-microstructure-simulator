@@ -28,9 +28,28 @@ class Exchange:
       ])
   
   def check_stops(self):
-    # check if any stop orders are activated
+    # scan stop order book if any stops are triggered by last_trade_price
     # submit any newly activated orders 
-    return
+
+    # First check bids
+    while self.stops.bids:
+      stop_order = self.stops.safe_peek("buy")
+      if self.last_trade_price is None or self.last_trade_price < stop_order.price:
+        break
+      self.stops.safe_pop("buy")
+      stop_order.order_type = "Market"
+      stop_order.stop_activated = True
+      self.submit_order(stop_order)
+    
+    #Next check asks
+    while self.stops.asks:
+      stop_order = self.stops.safe_peek("sell")
+      if self.last_trade_price is None or self.last_trade_price > stop_order.price:
+        break
+      self.stops.safe_pop("sell")
+      stop_order.order_type = "Market"
+      stop_order.stop_activated = True
+      self.submit_order(stop_order)
 
   def log_trade(self, trade):
     # Add trade as a row in the trade log
@@ -54,9 +73,11 @@ class Exchange:
     self.log_trade(trade)
     self.total_trades += 1
     self.last_trade_price = resting_price
+    self.check_stops
     return incoming_order.quantity - match_quantity, resting_order.quantity - match_quantity
 
   def match_limit_order(self, incoming_order):
+
     # Matching incoming limit orders or adding to order book
 
     incoming_direction = incoming_order.direction
@@ -88,6 +109,7 @@ class Exchange:
     self.order_book.insert(incoming_order)
 
   def match_market_order(self, incoming_order):
+
     # Matching incoming market orders 
     incoming_direction = incoming_order.direction
     pop_direction = "sell" if incoming_direction == "buy" else "buy"
@@ -110,16 +132,16 @@ class Exchange:
     incoming_order_type = order.order_type
     if incoming_order_type == "Market":
       self.match_market_order(order)
+      self.check_stops()
     elif incoming_order_type == "Limit":
       self.match_limit_order(order)
+      self.check_stops()
     elif incoming_order_type == "Stop":
-      self.stops.insert(order)
+      self.stops.insert_stop(order)
     elif incoming_order_type == "Cancel":
       self.order_book.cancel(order.direction, order.cancel_id)
     else:
       print("Invalid order type")
-
-    #self.check_stops()
   
   def print_order_book(self, n=5):
     print("\n--- Order Book --- ")

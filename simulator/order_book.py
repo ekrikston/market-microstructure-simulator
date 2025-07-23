@@ -17,6 +17,13 @@ class OrderBook:
     else:
       heapq.heappush(self.asks, (order.price, order.timestamp, order.order_id, order))
   
+  def insert_stop(self, order):
+    # Inserts a new stop order to the book
+    if order.direction == "buy":
+      heapq.heappush(self.bids, (order.price, order.timestamp, order.order_id, order))
+    else:
+      heapq.heappush(self.asks, (-order.price, order.timestamp, order.order_id, order))
+  
   def cancel(self, direction, cancel_id):
     # Removes specified order from the book
     heap = self.bids if direction == "buy" else self.asks

@@ -1,3 +1,4 @@
 Timestamp,Trade ID,Trade Price,Trade Quantity,Buy Order ID,Sell Order ID,Buyer ID,Seller ID,Buy Order Type,Sell Order Type,Aggressor
 2,0,75,25,2,1,B,A,Limit,Limit,Buy
-5,1,85,25,5,3,A,C,Limit,Limit,Buy
+6,1,85,25,6,3,A,C,Limit,Limit,Buy
+7,2,85,25,4,5,E,D,Market,Limit,Buy
